@@ -1,31 +1,72 @@
+import org.openrndr.KEY_ESCAPE
 import org.openrndr.application
 import org.openrndr.color.ColorRGBa
+import org.openrndr.dialogs.saveFileDialog
 import org.openrndr.draw.loadFont
-import org.openrndr.draw.loadImage
-import org.openrndr.draw.tint
-import kotlin.math.cos
-import kotlin.math.sin
+import org.openrndr.extra.osc.OSC
+import java.io.BufferedWriter
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 fun main() = application {
     configure {
-        width = 768
-        height = 576
+        width = 800
+        height = 200
     }
 
     program {
-        val image = loadImage("data/images/pm5544.png")
-        val font = loadFont("data/fonts/default.otf", 64.0)
+        val font = loadFont("data/fonts/default.otf", 20.0)
+        val lastOscMsg = AtomicReference("")
+        val counter = AtomicInteger(0)
+        val dirty = AtomicBoolean(false)
+        var msg = "Click to create a new .txt file"
+        var file: BufferedWriter? = null
+        var startTime = 0.0
+
+        val osc = OSC(portIn = 9000)
+        osc.listen("/*/*") { addr, it ->
+            counter.incrementAndGet()
+            dirty.set(true)
+            lastOscMsg.set(
+                listOf(
+                    addr,
+                    (seconds - startTime).toString(),
+                    it.joinToString()
+                ).joinToString()
+            )
+        }
 
         extend {
-            drawer.drawStyle.colorMatrix = tint(ColorRGBa.WHITE.shade(0.2))
-            drawer.image(image)
-
-            drawer.fill = ColorRGBa.PINK
-            drawer.circle(cos(seconds) * width / 2.0 + width / 2.0, sin(0.5 * seconds) * height / 2.0 + height / 2.0, 140.0)
-
+            val line = lastOscMsg.get()
+            drawer.clear(ColorRGBa.PINK)
             drawer.fontMap = font
-            drawer.fill = ColorRGBa.WHITE
-            drawer.text("OPENRNDR", width / 2.0, height / 2.0)
+            drawer.fill = ColorRGBa.BLACK
+            drawer.text(msg, 20.0, 25.0)
+            drawer.text(line, 20.0, 50.0)
+            drawer.text("Count: " + counter.get(), 20.0, 75.0)
+            if(dirty.getAndSet(false)) {
+                file?.appendLine(line)
+            }
+        }
+        mouse.buttonDown.listen {
+            if (file == null) {
+                saveFileDialog(supportedExtensions = listOf("Text" to listOf("txt"))) {
+                    msg = "Saving..."
+                    file = it.bufferedWriter()
+                    startTime = seconds
+                }
+            }
+        }
+        keyboard.keyDown.listen {
+            when (it.key) {
+                KEY_ESCAPE -> {
+                    application.exit()
+                    file?.flush()
+                    file?.close()
+                }
+                else -> osc.send("/mouse/foo", "1")
+            }
         }
     }
 }
