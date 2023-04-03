@@ -11,19 +11,19 @@ val applicationMainClass = "TemplateProgramKt"
 /**  ## additional ORX features to be added to this project */
 val orxFeatures = setOf<String>(
 //  "orx-boofcv",
-    "orx-camera",
+//  "orx-camera",
 //  "orx-chataigne",
-    "orx-color",
-    "orx-compositor",
+//  "orx-color",
+//  "orx-compositor",
 //  "orx-dnk3",
 //  "orx-easing",
 //  "orx-file-watcher",
-    "orx-fx",
+//  "orx-fx",
 //  "orx-glslify",
 //  "orx-gradient-descent",
-//    "orx-git-archiver",
-    "orx-gui",
-    "orx-image-fit",
+//  "orx-git-archiver",
+//  "orx-gui",
+//  "orx-image-fit",
 //  "orx-integral-image",
 //  "orx-interval-tree",
 //  "orx-jumpflood",
@@ -34,29 +34,29 @@ val orxFeatures = setOf<String>(
 //  "orx-mesh-generators",
 //  "orx-midi",
 //  "orx-minim",
-    "orx-no-clear",
-    "orx-noise",
+//  "orx-no-clear",
+//  "orx-noise",
 //  "orx-obj-loader",
-    "orx-olive",
-//  "orx-osc",
+//  "orx-olive",
+    "orx-osc",
 //  "orx-palette",
-    "orx-panel",
+//  "orx-panel",
 //  "orx-parameters",
 //  "orx-poisson-fill",
 //  "orx-rabbit-control",
 //  "orx-realsense2",
 //  "orx-runway",
-    "orx-shade-styles",
+//  "orx-shade-styles",
 //  "orx-shader-phrases",
-    "orx-shapes",
+//  "orx-shapes",
 //  "orx-syphon",
 //  "orx-temporal-blur",
 //  "orx-tensorflow",    
 //  "orx-time-operators",
 //  "orx-timer",
 //  "orx-triangulation",
-    "orx-video-profiles",
-    "orx-view-box",
+//  "orx-video-profiles",
+//  "orx-view-box",
 )
 
 /** ## additional ORML features to be added to this project */
@@ -265,6 +265,7 @@ class Openrndr {
             implementation(openrndr("animatable"))
             implementation(openrndr("extensions"))
             implementation(openrndr("filter"))
+            implementation(openrndr("dialogs")) //abe
             if ("video" in openrndrFeatures) {
                 implementation(openrndr("ffmpeg"))
                 runtimeOnly(openrndrNatives("ffmpeg"))
