@@ -15,22 +15,29 @@ val orxFeatures = setOf<String>(
 //  "orx-chataigne",
 //  "orx-color",
 //  "orx-compositor",
+//  "orx-compute-graph",
+//  "orx-compute-graph-nodes",
+//  "orx-delegate-magic",
 //  "orx-dnk3",
 //  "orx-easing",
+//  "orx-envelopes",
+//  "orx-expression-evaluator",
 //  "orx-file-watcher",
 //  "orx-fx",
 //  "orx-glslify",
 //  "orx-gradient-descent",
 //  "orx-git-archiver",
 //  "orx-gui",
+//  "orx-hash-grid",
 //  "orx-image-fit",
 //  "orx-integral-image",
 //  "orx-interval-tree",
 //  "orx-jumpflood",
 //  "orx-kdtree",
-//  "orx-keyframer",      
+//  "orx-keyframer",
 //  "orx-kinect-v1",
 //  "orx-kotlin-parser",
+//  "orx-marching-squares",
 //  "orx-mesh-generators",
 //  "orx-midi",
 //  "orx-minim",
@@ -43,6 +50,7 @@ val orxFeatures = setOf<String>(
 //  "orx-panel",
 //  "orx-parameters",
 //  "orx-poisson-fill",
+//  "orx-quadtree",
 //  "orx-rabbit-control",
 //  "orx-realsense2",
 //  "orx-runway",
@@ -51,10 +59,11 @@ val orxFeatures = setOf<String>(
 //  "orx-shapes",
 //  "orx-syphon",
 //  "orx-temporal-blur",
-//  "orx-tensorflow",    
+//  "orx-tensorflow",
 //  "orx-time-operators",
 //  "orx-timer",
 //  "orx-triangulation",
+//  "orx-turtle",
 //  "orx-video-profiles",
 //  "orx-view-box",
 )
@@ -265,7 +274,7 @@ class Openrndr {
             implementation(openrndr("animatable"))
             implementation(openrndr("extensions"))
             implementation(openrndr("filter"))
-            implementation(openrndr("dialogs")) //abe
+            implementation(openrndr("dialogs"))
             if ("video" in openrndrFeatures) {
                 implementation(openrndr("ffmpeg"))
                 runtimeOnly(openrndrNatives("ffmpeg"))
@@ -286,17 +295,42 @@ val openrndr = Openrndr()
 
 if (properties["openrndr.tasks"] == "true") {
     task("create executable jar for $applicationMainClass") {
-        group = " \uD83E\uDD8C OPENRNDR"
+        group = " ★ OPENRNDR"
         dependsOn("jar")
     }
 
     task("run $applicationMainClass") {
-        group = " \uD83E\uDD8C OPENRNDR"
+        group = " ★ OPENRNDR"
         dependsOn("run")
     }
 
     task("create standalone executable for $applicationMainClass") {
-        group = " \uD83E\uDD8C OPENRNDR"
+        group = " ★ OPENRNDR"
         dependsOn("jpackageZip")
+    }
+
+    task("add IDE file scopes") {
+        group = " ★ OPENRNDR"
+        val scopesFolder = File("${project.projectDir}/.idea/scopes")
+        scopesFolder.mkdirs()
+
+        val files = listOf(
+            "Code" to "file:*.kt||file:*.frag||file:*.vert||file:*.glsl",
+            "Text" to "file:*.txt||file:*.md||file:*.xml||file:*.json",
+            "Gradle" to "file[*buildSrc*]:*/||file:*gradle.*||file:*.gradle||file:*/gradle-wrapper.properties||file:*.toml",
+            "Images" to "file:*.png||file:*.jpg||file:*.dds||file:*.exr"
+        )
+        files.forEach { (name, pattern) ->
+            val file = File(scopesFolder, "__$name.xml")
+            if (!file.exists()) {
+                file.writeText(
+                    """
+                    <component name="DependencyValidationManager">
+                      <scope name=" ★ $name" pattern="$pattern" />
+                    </component>
+                    """.trimIndent()
+                )
+            }
+        }
     }
 }
