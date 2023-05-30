@@ -15,7 +15,7 @@ fun main() = application {
 
         val osc = OSC(portIn = 57575)
         osc.listen("/*") { addr, args ->
-            if (addr == "/start") startTime = seconds
+            if (addr == "/scene_launch" && startTime < 0) startTime = seconds
 
             if (startTime >= 0) {
                 val t = String.format("%.3f", seconds - startTime)
@@ -41,7 +41,7 @@ fun main() = application {
                 drawer.text("Message count: $c", 20.0, 75.0)
                 drawer.text("Time: ${seconds - startTime}", 20.0, 100.0)
             } else {
-                drawer.text("Waiting for /start message", 20.0, 75.0)
+                drawer.text("Waiting for /scene_launch message", 20.0, 75.0)
             }
         }
         mouse.moved.listen {
@@ -56,7 +56,7 @@ fun main() = application {
                     application.exit()
                 }
 
-                KEY_ENTER -> osc.send("/start", 1)
+                KEY_ENTER -> osc.send("/scene_launch", 1)
 
                 else -> osc.send("/key", it.key)
             }
