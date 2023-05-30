@@ -228,6 +228,8 @@ class Openrndr {
     // choices are "orx-tensorflow-gpu", "orx-tensorflow"
     val orxTensorflowBackend = "orx-tensorflow"
 
+    val currArch = DefaultNativePlatform("current").architecture.name
+    val currOs = OperatingSystem.current()
     val os = if (project.hasProperty("targetPlatform")) {
         val supportedPlatforms = setOf("windows", "macos", "linux-x64", "linux-arm64")
         val platform: String = project.property("targetPlatform") as String
