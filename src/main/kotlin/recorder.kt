@@ -4,14 +4,16 @@ import org.openrndr.application
 import org.openrndr.color.ColorRGBa
 import org.openrndr.extra.osc.OSC
 import java.io.File
+import kotlin.system.exitProcess
 
 fun main() = application {
     program {
         var counter = 0
-        val lastMessages = mutableMapOf<String, String>()
+        val lastMessages = mutableListOf<String>()
         val file = File("osc-${System.currentTimeMillis()}.txt")
         val writer = file.bufferedWriter()
         var startTime = -1.0
+        var doQuit = false
 
         val osc = OSC(portIn = 57575)
         osc.listen("/*") { addr, args ->
@@ -22,7 +24,7 @@ fun main() = application {
                 val line = listOf(addr, t, args.joinToString()).joinToString()
                 synchronized(this) {
                     counter++
-                    lastMessages[addr] = line
+                    lastMessages.add(line)
                 }
             }
         }
@@ -31,12 +33,20 @@ fun main() = application {
             drawer.clear(ColorRGBa.PINK)
             drawer.fill = ColorRGBa.BLACK
             var c: Int
+            if(doQuit) {
+                synchronized(this) {
+                    writer.flush()
+                    writer.close()
+                }
+                println("Done writing to ${file.absolutePath}")
+                exitProcess(0)
+            }
             synchronized(this) {
                 c = counter
-                lastMessages.forEach { (_, line) -> writer.appendLine(line) }
+                lastMessages.forEach { line -> writer.appendLine(line) }
                 lastMessages.clear()
             }
-            if(startTime >= 0) {
+            if (startTime >= 0) {
                 drawer.text("> Recording OSC (press ESC to finish)", 20.0, 50.0)
                 drawer.text("Message count: $c", 20.0, 75.0)
                 drawer.text("Time: ${seconds - startTime}", 20.0, 100.0)
@@ -49,12 +59,7 @@ fun main() = application {
         }
         keyboard.keyDown.listen {
             when (it.key) {
-                KEY_ESCAPE -> {
-                    writer.flush()
-                    writer.close()
-                    println("Done writing to ${file.absolutePath}")
-                    application.exit()
-                }
+                KEY_ESCAPE -> doQuit = true
 
                 KEY_ENTER -> osc.send("/scene_launch", 1)
 
