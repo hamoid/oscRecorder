@@ -5,6 +5,7 @@ import org.openrndr.draw.loadImage
 import org.openrndr.draw.tint
 import org.openrndr.extensions.Screenshots
 import org.openrndr.extra.minim.minim
+import org.openrndr.extra.osc.OSC
 import org.openrndr.math.Matrix55
 import java.io.File
 import kotlin.system.exitProcess
@@ -15,6 +16,8 @@ fun main(args: Array<String>) = application {
         height = 400
     }
     program {
+        val osc = OSC(portIn = 50000, portOut = 57575)
+
         val id = if (args.size == 1) args[0] else "01"
 
         val fileMP3 = File("data/audio/$id.mp3")
@@ -66,35 +69,26 @@ fun main(args: Array<String>) = application {
                 while (rowCurrent.seconds < advanceUpToSeconds) {
                     rowId++
                     rowCurrent = rows[rowId]
-                    when (rowCurrent.address[1]) {
+                    val addr = rowCurrent.address
+                    when (addr[1]) {
                         // volumes
-                        'v' -> {
-                            val vols = rowCurrent.arguments.split(",").map {
-                                it.toFloat()
-                            }
-                            //println("${rowCurrent.address} ${rowCurrent.seconds} $vols")
-                        }
+                        'v' -> osc.send(addr, *rowCurrent.arguments.split(",").map {
+                            it.toFloat()
+                        }.toTypedArray())
 
                         // pressure
-                        'p' -> {
-                            val ints = rowCurrent.arguments.split(", ").map {
-                                it.toInt()
-                            }
-                            //println("${rowCurrent.address} $ints")
-                        }
+                        'p' -> osc.send(addr, *rowCurrent.arguments.split(", ").map {
+                            it.toInt()
+                        }.toTypedArray())
 
                         // scene_launch
-                        's' -> {
-                            //println(rowCurrent.address)
-                        }
+                        's' -> osc.send(addr, 1)
 
                         // midinote
-                        'm' -> {
-                            val ints = rowCurrent.arguments.split(", ").map {
-                                it.toInt()
-                            }
-                            //println("${rowCurrent.address} $ints")
-                        }
+                        'm' -> osc.send(addr, *rowCurrent.arguments.split(", ").map {
+                            it.toInt()
+                        }.toTypedArray())
+
                     }
                 }
             }
