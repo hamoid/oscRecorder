@@ -4,13 +4,13 @@ import org.openrndr.application
 import org.openrndr.color.ColorRGBa
 import org.openrndr.extra.osc.OSC
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.system.exitProcess
 
 fun main() = application {
     program {
-        var counter = 0
-        val lastMessages = mutableListOf<String>()
-        val file = File("osc-${System.currentTimeMillis()}.txt")
+        val counter = AtomicInteger(0)
+        val file = File("${System.currentTimeMillis()}.osc")
         val writer = file.bufferedWriter()
         var startTime = -1.0
         var doQuit = false
@@ -22,17 +22,14 @@ fun main() = application {
             if (startTime >= 0) {
                 val t = String.format("%.3f", seconds - startTime)
                 val line = listOf(addr, t, args.joinToString()).joinToString()
-                synchronized(this) {
-                    counter++
-                    lastMessages.add(line)
-                }
+                counter.incrementAndGet()
+                writer.appendLine(line)
             }
         }
 
         extend {
             drawer.clear(ColorRGBa.PINK)
             drawer.fill = ColorRGBa.BLACK
-            var c: Int
             if(doQuit) {
                 synchronized(this) {
                     writer.flush()
@@ -41,14 +38,9 @@ fun main() = application {
                 println("Done writing to ${file.absolutePath}")
                 exitProcess(0)
             }
-            synchronized(this) {
-                c = counter
-                lastMessages.forEach { line -> writer.appendLine(line) }
-                lastMessages.clear()
-            }
             if (startTime >= 0) {
                 drawer.text("> Recording OSC (press ESC to finish)", 20.0, 50.0)
-                drawer.text("Message count: $c", 20.0, 75.0)
+                drawer.text("Message count: ${counter.get()}", 20.0, 75.0)
                 drawer.text("Time: ${seconds - startTime}", 20.0, 100.0)
             } else {
                 drawer.text("Waiting for /scene_launch message", 20.0, 75.0)

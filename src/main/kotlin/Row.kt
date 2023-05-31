@@ -1,0 +1,1 @@
+data class Row(val seconds: Double, val address: String, val arguments: String)

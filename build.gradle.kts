@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 group = "org.openrndr.template"
 version = "1.0.0"
 
-val applicationMainClass = "TemplateProgramKt"
+val applicationMainClass = "PlaybackKt"
 
 /**  ## additional ORX features to be added to this project */
 val orxFeatures = setOf<String>(
@@ -40,7 +40,7 @@ val orxFeatures = setOf<String>(
 //  "orx-marching-squares",
 //  "orx-mesh-generators",
 //  "orx-midi",
-//  "orx-minim",
+    "orx-minim",
 //  "orx-no-clear",
 //  "orx-noise",
 //  "orx-obj-loader",

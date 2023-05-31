@@ -1,78 +1,125 @@
-import org.openrndr.KEY_ENTER
 import org.openrndr.KEY_ESCAPE
 import org.openrndr.application
 import org.openrndr.color.ColorRGBa
-import org.openrndr.extra.osc.OSC
+import org.openrndr.draw.loadImage
+import org.openrndr.draw.tint
+import org.openrndr.extensions.Screenshots
+import org.openrndr.extra.minim.minim
+import org.openrndr.math.Matrix55
 import java.io.File
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) = application {
+    configure {
+        width = 2400
+        height = 400
+    }
     program {
-        if(args.size != 1) {
-            println("Usage: ./gradlew run -Popenrndr.application=PlaybackKt --args='osc-file-???.txt'")
-            exitProcess(0)
+        val id = if (args.size == 1) args[0] else "01"
+
+        val fileMP3 = File("data/audio/$id.mp3")
+        val fileOSC = File("data/audio/$id.osc")
+        val filePNG = loadImage("data/audio/$id.png")
+        val filePNG2 = loadImage("data/audio/${id}_2.png")
+
+        listOf(fileMP3, fileOSC).forEach { f ->
+            if (!f.isFile) {
+                println("File ${f.path} not found.")
+                exitProcess(0)
+            }
         }
-        val file = File(args[0])
 
-        if(!file.isFile) {
-            println("File ${args[0]} not found")
-            exitProcess(0)
+        val minim = minim().also {
+            if (it.lineOut == null) {
+                println("Can't create audio output.")
+                exitProcess(0)
+            }
         }
 
-        var counter = 0
-        val reader = file.bufferedReader()
+        val player = minim.loadFile(fileMP3.absolutePath)
+        val songLength = player.metaData.length().toDouble()
 
-//        val lastMessages = mutableMapOf<String, String>()
-//        val writer = file.bufferedWriter()
-//        var startTime = -1.0
+        val rows = fileOSC.readLines().map { line ->
+            val parts = line.split(", ", ignoreCase = false, limit = 3)
+            Row(parts[1].toDouble(), parts[0], parts[2])
+        }
 
-//        val osc = OSC(portIn = 57575)
-//        osc.listen("/*") { addr, args ->
-//            if (addr == "/start") startTime = seconds
-//
-//            if (startTime >= 0) {
-//                val t = String.format("%.3f", seconds - startTime)
-//                val line = listOf(addr, t, args.joinToString()).joinToString()
-//                synchronized(this) {
-//                    counter++
-//                    lastMessages[addr] = line
-//                }
-//            }
-//        }
+        var rowId = 0
+        var rowCurrent = rows[rowId]
+        var rowClick = rows[rowId]
+        var clickSeconds = seconds
 
+        extend(Screenshots())
         extend {
-//            drawer.clear(ColorRGBa.PINK)
-//            drawer.fill = ColorRGBa.BLACK
-//            var c: Int
-//            synchronized(this) {
-//                c = counter
-//                lastMessages.forEach { (_, line) -> writer.appendLine(line) }
-//                lastMessages.clear()
-//            }
-//            if(startTime >= 0) {
-//                drawer.text("> Recording OSC (press ESC to finish)", 20.0, 50.0)
-//                drawer.text("Message count: $c", 20.0, 75.0)
-//                drawer.text("Time: ${seconds - startTime}", 20.0, 100.0)
-//            } else {
-//                drawer.text("Waiting for /start message", 20.0, 75.0)
-//            }
+            drawer.drawStyle.colorMatrix = tint(ColorRGBa.WHITE.shade(0.5))
+            drawer.image(filePNG)
+
+            drawer.drawStyle.colorMatrix = Matrix55.IDENTITY
+            drawer.image(filePNG2)
+            if (player.isPlaying) {
+                val t = player.position() / songLength
+                drawer.stroke = ColorRGBa.PINK
+                drawer.lineSegment(width * t, 0.0, width * t, height * 1.0)
+
+                val offsetSeconds = seconds - clickSeconds
+                val advanceUpToSeconds = rowClick.seconds + offsetSeconds
+                while (rowCurrent.seconds < advanceUpToSeconds) {
+                    rowId++
+                    rowCurrent = rows[rowId]
+                    when (rowCurrent.address[1]) {
+                        // volumes
+                        'v' -> {
+                            val vols = rowCurrent.arguments.split(",").map {
+                                it.toFloat()
+                            }
+                            //println("${rowCurrent.address} ${rowCurrent.seconds} $vols")
+                        }
+
+                        // pressure
+                        'p' -> {
+                            val ints = rowCurrent.arguments.split(", ").map {
+                                it.toInt()
+                            }
+                            //println("${rowCurrent.address} $ints")
+                        }
+
+                        // scene_launch
+                        's' -> {
+                            //println(rowCurrent.address)
+                        }
+
+                        // midinote
+                        'm' -> {
+                            val ints = rowCurrent.arguments.split(", ").map {
+                                it.toInt()
+                            }
+                            //println("${rowCurrent.address} $ints")
+                        }
+                    }
+                }
+            }
         }
-//        mouse.moved.listen {
-//            osc.send("/mouse", it.position.x.toFloat(), it.position.y.toFloat())
-//        }
-//        keyboard.keyDown.listen {
-//            when (it.key) {
-//                KEY_ESCAPE -> {
-//                    writer.flush()
-//                    writer.close()
-//                    println("Done writing to ${file.absolutePath}")
-//                    application.exit()
-//                }
-//
-//                KEY_ENTER -> osc.send("/start", 1)
-//
-//                else -> osc.send("/key", it.key)
-//            }
-//        }
+        mouse.buttonUp.listen {
+            val s = (songLength * it.position.x / width) * 0.001
+
+            clickSeconds = seconds
+
+            rowId = rows.binarySearch { row ->
+                (row.seconds - s).toInt()
+            }
+
+            rowClick = rows[rowId]
+            rowCurrent = rows[rowId]
+
+            player.play((rowClick.seconds * 1000).toInt())
+        }
+
+        keyboard.keyDown.listen {
+            when (it.key) {
+                KEY_ESCAPE -> {
+                    application.exit()
+                }
+            }
+        }
     }
 }
