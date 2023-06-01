@@ -1,9 +1,9 @@
 import org.openrndr.KEY_ESCAPE
+import org.openrndr.KEY_SPACEBAR
 import org.openrndr.application
 import org.openrndr.color.ColorRGBa
 import org.openrndr.draw.loadImage
 import org.openrndr.draw.tint
-import org.openrndr.extensions.Screenshots
 import org.openrndr.extra.minim.minim
 import org.openrndr.extra.osc.OSC
 import org.openrndr.math.Matrix55
@@ -52,7 +52,6 @@ fun main(args: Array<String>) = application {
         var rowClick = rows[rowId]
         var clickSeconds = seconds
 
-        extend(Screenshots())
         extend {
             drawer.drawStyle.colorMatrix = tint(ColorRGBa.WHITE.shade(0.5))
             drawer.image(filePNG)
@@ -110,9 +109,8 @@ fun main(args: Array<String>) = application {
 
         keyboard.keyDown.listen {
             when (it.key) {
-                KEY_ESCAPE -> {
-                    application.exit()
-                }
+                KEY_ESCAPE -> application.exit()
+                KEY_SPACEBAR -> if(player.isPlaying) player.pause() else player.play()
             }
         }
     }
