@@ -5,11 +5,13 @@ import org.openrndr.color.ColorRGBa
 import org.openrndr.extra.osc.OSC
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.min
 import kotlin.system.exitProcess
 
 fun main() = application {
     program {
         val counter = AtomicInteger(0)
+        val noDataCounter = AtomicInteger(0)
         val file = File("${System.currentTimeMillis()}.osc")
         val writer = file.bufferedWriter()
         var startTime = -1.0
@@ -23,6 +25,7 @@ fun main() = application {
                 val t = String.format("%.3f", seconds - startTime)
                 val line = listOf(addr, t, args.joinToString()).joinToString()
                 counter.incrementAndGet()
+                noDataCounter.set(0)
                 writer.appendLine(line)
             }
         }
@@ -45,6 +48,9 @@ fun main() = application {
             } else {
                 drawer.text("Waiting for /scene_launch message", 20.0, 75.0)
             }
+
+            drawer.fill = ColorRGBa.RED
+            drawer.circle(drawer.bounds.center, min(100, noDataCounter.getAndIncrement()) * 1.0)
         }
         mouse.moved.listen {
             osc.send("/mouse", it.position.x.toFloat(), it.position.y.toFloat())
